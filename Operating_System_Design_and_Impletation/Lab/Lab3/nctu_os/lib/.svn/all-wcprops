@@ -1,0 +1,23 @@
+K 25
+svn:wc:ra_dav:version-url
+V 48
+/OSDI_SVN/!svn/ver/206/u0116320/lab3/nctu_os/lib
+END
+printfmt.c
+K 25
+svn:wc:ra_dav:version-url
+V 59
+/OSDI_SVN/!svn/ver/206/u0116320/lab3/nctu_os/lib/printfmt.c
+END
+readline.c
+K 25
+svn:wc:ra_dav:version-url
+V 59
+/OSDI_SVN/!svn/ver/206/u0116320/lab3/nctu_os/lib/readline.c
+END
+string.c
+K 25
+svn:wc:ra_dav:version-url
+V 57
+/OSDI_SVN/!svn/ver/206/u0116320/lab3/nctu_os/lib/string.c
+END

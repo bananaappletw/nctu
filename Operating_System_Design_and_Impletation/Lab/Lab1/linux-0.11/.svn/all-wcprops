@@ -1,0 +1,41 @@
+K 25
+svn:wc:ra_dav:version-url
+V 47
+/OSDI_SVN/!svn/ver/125/u0116320/lab1/linux-0.11
+END
+Makefile.header
+K 25
+svn:wc:ra_dav:version-url
+V 61
+/OSDI_SVN/!svn/ver/4/u0116320/lab1/linux-0.11/Makefile.header
+END
+0116320.patch
+K 25
+svn:wc:ra_dav:version-url
+V 60
+/OSDI_SVN/!svn/ver/40/u0116320/lab1/linux-0.11/0116320.patch
+END
+0116320_lab2.patch
+K 25
+svn:wc:ra_dav:version-url
+V 66
+/OSDI_SVN/!svn/ver/125/u0116320/lab1/linux-0.11/0116320_lab2.patch
+END
+Makefile
+K 25
+svn:wc:ra_dav:version-url
+V 56
+/OSDI_SVN/!svn/ver/125/u0116320/lab1/linux-0.11/Makefile
+END
+README
+K 25
+svn:wc:ra_dav:version-url
+V 52
+/OSDI_SVN/!svn/ver/4/u0116320/lab1/linux-0.11/README
+END
+.gdbinit
+K 25
+svn:wc:ra_dav:version-url
+V 54
+/OSDI_SVN/!svn/ver/4/u0116320/lab1/linux-0.11/.gdbinit
+END

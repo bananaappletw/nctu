@@ -1,0 +1,115 @@
+socket report
+server端
+#include<stdio.h>基本c的函數使用
+#include<sys/types.h>define一些基本的型態
+#include<sys/socket.h>socket函數使用
+#include<netinet/in.h>define sockaddr_in和in_addr的結構
+#include<arpa/inet.h>位元排序轉換整數的函數
+self_addr是server的socket
+client_addr是client的socket
+server_sock=socket(AF_INET,SOCK_STREAM,0);
+先建立socket
+if(server_sock<0)
+{
+	printf("Cannot create server socket.\n");
+	return 1;
+}
+要是沒有建立成功顯示錯誤訊息
+bzero(&self_addr,sizeof(self_addr));
+先清空ip位址
+self_addr.sin_family=AF_INET;
+self_addr.sin_addr.s_addr=htonl(INADDR_ANY);
+self_addr.sin_port=htons(PORT);
+建立主機的IPV4的socket
+if(bind(server_sock,(struct sockaddr *)&self_addr,sizeof(self_addr))==-1)
+{
+	printf("Cannot bind.\n");
+	return 1;
+}
+將主機的socket導向自己建立的socket要是不行顯示錯誤訊息
+if(listen(server_sock,CONNECTION_LIMIT)==-1)
+{
+	printf("Cannot listen.\n");
+	return 1;
+}
+listen等待client來連線要是不行顯示錯誤訊息
+while(1)
+{
+	temp_sock=accept(server_sock, (struct sockaddr*)&client_addr,&client_addr_len);
+	接受連線請求然後將socket的id存起來等待連線
+	if(temp_sock==-1)
+	{
+		printf("Cannot accept request from client.\n");
+		return 1;
+        }
+	要是沒有辦法accept顯示錯誤訊息
+        bzero(buffer,sizeof(buffer));
+	將buffer清空
+	recv_len=recv(temp_sock,buffer,BUFLEN,0);
+	接收傳來的訊息有多長
+	printf("Received %d bytes from client.",recv_len);
+	顯示收到多大的訊息
+	printf("--> %s\n",buffer);
+	顯示接收的訊息
+	send(temp_sock,buffer,recv_len,0);
+	將訊息傳回去
+	close(temp_sock);
+	中止連線
+}
+client端
+#include<stdio.h>基本c的函數使用
+#include<sys/socket.h>socket函數使用
+#include<netinet/in.h>define sockaddr_in和in_addr的結構
+#include<arpa/inet.h>位元排序轉換整數的函數
+#include <string.h>string的函數庫
+server_addr是server的socket
+client_socket是client的socket的id
+if(argc<2)
+{
+	printf("Usage : echo_client string\n");
+	scanf("%s",buffer);
+	str=buffer;
+	要是沒有argument的話自行輸入
+}
+else
+	str=argv[1];
+將argument存起來
+client_sock=socket(AF_INET,SOCK_STREAM,0);
+先建立socket
+if(client_sock<0)
+{
+	printf("Cannot create server socket.\n");
+	return 1;
+}
+要是沒有建立成功顯示錯誤訊息
+bzero(&server_addr,sizeof(server_addr));
+先清空ip位址
+server_addr.sin_family=AF_INET;
+server_addr.sin_addr.s_addr=inet_addr("140.113.216.176");//ip要換
+server_addr.sin_port=htons(PORT);
+建立server的IPV4的socket
+if(connect(client_sock,(void*)&server_addr,sizeof(server_addr))==-1)
+{
+	printf("Cannot connect to server.\n");
+	return 1;
+}
+相server要求連線要是不行顯示錯誤訊息
+if(send(client_sock,str,strlen(str),0)==-1)
+{
+	printf("Cannot send request to server.\n");
+	return 1;
+}
+向server送訊息
+bzero(buffer,sizeof(buffer));
+將buffer清空
+if(recv(client_sock,buffer,BUFLEN,0)==-1)
+{
+	printf("Cannot receive response from server.\n");
+	return 1;
+}
+接收server的訊息要是不行顯示錯誤訊息
+printf("Server says : %s\n",buffer);
+顯示server的訊息
+close(client_sock);
+中止連線
+}

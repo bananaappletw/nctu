@@ -1,0 +1,62 @@
+Index: include/linux/sched.h
+===================================================================
+--- include/linux/sched.h	(revision 37)
++++ include/linux/sched.h	(working copy)
+@@ -1,7 +1,9 @@
+ #ifndef _SCHED_H
+ #define _SCHED_H
+-
+-#define NR_TASKS 0
++/*
++  NR_TASKS should not be zero
++*/
++#define NR_TASKS 100
+ #define HZ 100
+ 
+ #define FIRST_TASK task[0]
+Index: init/main.c
+===================================================================
+--- init/main.c	(revision 37)
++++ init/main.c	(working copy)
+@@ -137,7 +137,10 @@
+ 	hd_init();
+ 	floppy_init();
+ 	sti();
+-	panic(""); 
++	/*
++ 	  This line is no need.
++	*/
++	//panic(""); 
+ 	move_to_user_mode();
+ 	if (!fork()) {		/* we count on this going ok */
+ 		init();
+@@ -203,6 +206,10 @@
+ 			(void) dup(0);
+ 			_exit(execve("/bin/sh",argv,envp));
+ 		}
++		/*
++		  Print my student id.
++		*/
++		printf("Hello 0116320\n\r");
+ 		while (1)
+ 			if (pid == wait(&i))
+ 				break;
+Index: Makefile
+===================================================================
+--- Makefile	(revision 37)
++++ Makefile	(working copy)
+@@ -34,11 +34,11 @@
+ LIBS	=lib/lib.a
+ 
+ .c.s:
+-@$(CC) $(CFLAGS) -S -o $*.s $<
++	@$(CC) $(CFLAGS) -S -o $*.s $<
+ .s.o:
+-@$(AS)  -o $*.o $<
++	@$(AS)  -o $*.o $<
+ .c.o:
+-@$(CC) $(CFLAGS) -c -o $*.o $<
++	@$(CC) $(CFLAGS) -c -o $*.o $<
+ 
+ all:	Image	
+ 

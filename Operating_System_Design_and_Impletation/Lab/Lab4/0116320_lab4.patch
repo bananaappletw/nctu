@@ -1,0 +1,579 @@
+Index: nctu_os/kernel/kbd.c
+===================================================================
+--- nctu_os/kernel/kbd.c	(revision 367)
++++ nctu_os/kernel/kbd.c	(working copy)
+@@ -225,7 +225,7 @@
+ 	irq_setmask_8259A(irq_mask_8259A & ~(1<<1));
+ 	/* Lab3 TODO: Register trap handler */
+ 	extern void kbd_entry();
+-	register_handler(IRQ_OFFSET+IRQ_KBD, kbd_intr, kbd_entry, 1, 0);
++	register_handler(IRQ_OFFSET+IRQ_KBD, kbd_intr, kbd_entry, 0, 0);
+ 	//SETGATE(idt[IRQ_OFFSET+IRQ_KBD], 1, GD_KT, kbd_entry, 0)
+ }
+ 
+Index: nctu_os/kernel/task.c
+===================================================================
+--- nctu_os/kernel/task.c	(revision 367)
++++ nctu_os/kernel/task.c	(working copy)
+@@ -2,7 +2,7 @@
+ #include <inc/types.h>
+ #include <inc/x86.h>
+ #include <kernel/task.h>
+-
++#include <inc/lock.h>
+ // Global descriptor table.
+ //
+ // Set up global descriptor table (GDT) with separate segments for
+@@ -58,6 +58,7 @@
+ //Find an avaiable task slot and setup 
+ int task_create()
+ {
++	lock();
+ 	/* Find a free task structure */
+ 	int i = 0;
+ 	Task *ts = NULL;
+@@ -85,8 +86,8 @@
+ 	ts->task_id = i;
+ 	ts->state = TASK_RUNNABLE;
+ 	ts->parent_id = cur_task->task_id;
+-	ts->remind_ticks = 100;
+-
++	ts->remind_ticks = TIME_QUANT;
++	unlock();
+ 	return i;
+ }
+ 
+@@ -106,7 +107,7 @@
+ 
+ 	if (pid < 0 )
+ 		return -1;
+-	
++	lock();
+ 	if ((uint32_t)cur_task != NULL)
+ 	{
+ 		/* Lab4 TODO: Copy parent's tf to new task's tf */
+@@ -120,7 +121,7 @@
+ 		//parent
+ 		cur_task->tf.tf_regs.reg_eax=0;
+ 	}
+-
++	unlock();
+ 	return 0;
+ 	
+ 	
+Index: nctu_os/kernel/trap.c
+===================================================================
+--- nctu_os/kernel/trap.c	(revision 367)
++++ nctu_os/kernel/trap.c	(working copy)
+@@ -3,7 +3,7 @@
+ #include <kernel/assert.h>
+ #include <inc/mmu.h>
+ #include <inc/x86.h>
+-
++#include <inc/lock.h>
+ /* For debugging, so print_trapframe can distinguish between printing
+  * a saved trapframe and printing the current trapframe and print some
+  * additional information in the latter case.
+@@ -142,33 +142,27 @@
+ 		print_trapframe(tf);
+ 		return;
+ 	}
+-
++	
+ 	last_tf = tf;
++	//lock();	//(1)
+ 	/* Lab3 TODO: Check the trap number and call the interrupt handler. */
+ 	if (trap_hnd[tf->tf_trapno] != NULL)
+ 	{
+-	
++		extern Task *cur_task;
++		
+ 		if ((tf->tf_cs & 3) == 3)
+ 		{
+-			// Trapped from user mode.
+-			extern Task *cur_task;
+-
+-			// Disable interrupt first
+-			// Think: Why we need disable interrupt here?
+-			__asm __volatile("cli");
+-
+-			// Copy trap frame (which is currently on the stack)
+-			// into 'cur_task->tf', so that running the environment
+-			// will restart at the trap point.
++			lock();
+ 			cur_task->tf = *tf;
+ 			tf = &(cur_task->tf);
+-				
++			unlock();
+ 		}
+ 		// Do ISR
+ 		trap_hnd[tf->tf_trapno](tf);
+ 		
+-		// Pop the kernel stack 
++		//lock();	//(2)
+ 		env_pop_tf(tf);
++		return;
+ 	}
+ 
+ 	// Unexpected trap: The user process or the kernel has a bug.
+Index: nctu_os/kernel/task.h
+===================================================================
+--- nctu_os/kernel/task.h	(revision 367)
++++ nctu_os/kernel/task.h	(working copy)
+@@ -2,8 +2,8 @@
+ #define TASK_H
+ 
+ #include <inc/trap.h>
+-#define NR_TASKS	10
+-#define TIME_QUANT	100
++#define NR_TASKS	5
++#define TIME_QUANT	1
+ 
+ typedef enum
+ {
+Index: nctu_os/kernel/syscall.c
+===================================================================
+--- nctu_os/kernel/syscall.c	(revision 367)
++++ nctu_os/kernel/syscall.c	(working copy)
+@@ -1,6 +1,7 @@
+ #include <kernel/task.h>
+ #include <kernel/syscall.h>
+ #include <inc/trap.h>
++#include <inc/lock.h>
+ 
+ void do_puts(char *str, uint32_t len)
+ {
+@@ -42,6 +43,7 @@
+ 
+ 	case SYS_sleep:
+ 		/* Lab4 TODO: set task to sleep state and yield this task. */
++		lock();
+ 		cur_task->state= TASK_SLEEP;
+ 		cur_task->remind_ticks= a1;
+ 		sched_yield();
+Index: nctu_os/kernel/timer.c
+===================================================================
+--- nctu_os/kernel/timer.c	(revision 367)
++++ nctu_os/kernel/timer.c	(working copy)
+@@ -4,6 +4,7 @@
+ #include <kernel/task.h>
+ #include <inc/mmu.h>
+ #include <inc/x86.h>
++#include <inc/lock.h>
+ 
+ #define TIME_HZ 100
+ 
+@@ -27,7 +28,6 @@
+ 	extern Task tasks[];
+ 	
+ 	extern Task *cur_task;
+-	
+ 	if (cur_task != NULL)
+ 	{
+ 		/* Lab4 TODO: Check if tasks need wakeup.  */
+@@ -36,14 +36,19 @@
+ 			if(tasks[i].state == TASK_SLEEP)
+ 			{
+ 				tasks[i].remind_ticks--;
+-				if(!tasks[i].remind_ticks)
++				if(tasks[i].remind_ticks==0)
+ 					tasks[i].state=TASK_RUNNABLE;
+ 			}
+ 		}
+ 		/* Lab4 TODO: Check cur_task->remind_ticks, if remind_ticks <= 0 then yield the task (call sched_yield() in sched.c)*/
+ 		cur_task->remind_ticks--;
+-		if(!cur_task->remind_ticks)	
+-			sched_yield();
++		if(cur_task->remind_ticks<=0)
++		{
++			if((tf->tf_cs & 3) == 3)
++				sched_yield();
++			else
++				env_pop_tf(tf);
++		}
+ 	}
+ }
+ 
+@@ -61,7 +66,7 @@
+ 	/* Lab3 TODO: Register trap handler */
+ 	extern void timer_entry();
+ 	
+-	register_handler(IRQ_OFFSET+IRQ_TIMER, timer_handler,timer_entry, 1, 0);
++	register_handler(IRQ_OFFSET+IRQ_TIMER, timer_handler,timer_entry, 0, 0);
+ 	//SETGATE(idt[IRQ_OFFSET+IRQ_TIMER], 0, GD_KT, timer_entry, 0)
+ 
+ }
+Index: nctu_os/kernel/main.c
+===================================================================
+--- nctu_os/kernel/main.c	(revision 367)
++++ nctu_os/kernel/main.c	(working copy)
+@@ -9,7 +9,19 @@
+ 
+ extern void init_video(void);
+ extern Task *cur_task;
+-
++void task2()
++{
++	int i,pid;
++	i=getpid();
++	while(1)
++	{
++		if( (pid=fork()) >0 )
++		{
++			cprintf("Im %d, bye!\n",pid);
++			kill_self();
++		}		
++	}
++}
+ void kernel_main(void)
+ {
+ 	extern void task_job();
+@@ -41,17 +53,18 @@
+ 	"movw %%ax,%%gs" \
+ 	:: "m" (cur_task->tf.tf_esp), "i" (GD_UD | 0x03), "i" (GD_UT | 0x03)
+ 	:"ax");
+-
+ 	/* Below code is running on user mode */
+ 	if (fork())
+ 	{
+ 
+ 		/* Child */
++		/*
+ 		if (fork()) task_job(); 
+ 		else{
+ 		if (fork()) task_job(); else
+ 		if (fork()) task_job(); else task_job();}
+-		
++		*/
++		task2();
+ 	}
+ 	else
+ 	{
+Index: nctu_os/kernel/sched.c
+===================================================================
+--- nctu_os/kernel/sched.c	(revision 367)
++++ nctu_os/kernel/sched.c	(working copy)
+@@ -1,5 +1,5 @@
+ #include <kernel/task.h>
+-
++#include <inc/lock.h>
+ static index = 0;
+ void sched_yield(void)
+ {
+@@ -8,7 +8,6 @@
+ 	extern Task *cur_task;
+ 	int i;
+ 	int next_i = 0;
+-
+ 	/* Lab4 TODO: Implement a simple round-robin scheduling there 
+ 	*  Hint: Choose a runnable task from tasks[] and use env_pop_tf() do the context-switch
+ 	*/
+@@ -16,12 +15,13 @@
+ 	{
+ 		index = (index +1) % NR_TASKS;
+ 		if( tasks[index].state == TASK_RUNNABLE )
+-		{
+-			if(cur_task->state!=TASK_SLEEP)
++		{	
++			lock();
++			if(cur_task!=NULL && cur_task->state==TASK_RUNNING)
+ 				cur_task->state = TASK_RUNNABLE;
+ 			cur_task=&tasks[index];
+ 			cur_task->state = TASK_RUNNING;
+-			cur_task->remind_ticks= 100;
++			cur_task->remind_ticks= TIME_QUANT;
+ 			env_pop_tf(&cur_task->tf);
+ 		}
+ 	}
+Index: 0116320_lab4.patch
+===================================================================
+--- 0116320_lab4.patch	(revision 367)
++++ 0116320_lab4.patch	(working copy)
+@@ -0,0 +1,287 @@
++Index: nctu_os/kernel/kbd.c
++===================================================================
++--- nctu_os/kernel/kbd.c	(revision 367)
+++++ nctu_os/kernel/kbd.c	(working copy)
++@@ -225,7 +225,7 @@
++ 	irq_setmask_8259A(irq_mask_8259A & ~(1<<1));
++ 	/* Lab3 TODO: Register trap handler */
++ 	extern void kbd_entry();
++-	register_handler(IRQ_OFFSET+IRQ_KBD, kbd_intr, kbd_entry, 1, 0);
+++	register_handler(IRQ_OFFSET+IRQ_KBD, kbd_intr, kbd_entry, 0, 0);
++ 	//SETGATE(idt[IRQ_OFFSET+IRQ_KBD], 1, GD_KT, kbd_entry, 0)
++ }
++ 
++Index: nctu_os/kernel/task.c
++===================================================================
++--- nctu_os/kernel/task.c	(revision 367)
+++++ nctu_os/kernel/task.c	(working copy)
++@@ -2,7 +2,7 @@
++ #include <inc/types.h>
++ #include <inc/x86.h>
++ #include <kernel/task.h>
++-
+++#include <inc/lock.h>
++ // Global descriptor table.
++ //
++ // Set up global descriptor table (GDT) with separate segments for
++@@ -58,6 +58,7 @@
++ //Find an avaiable task slot and setup 
++ int task_create()
++ {
+++	lock();
++ 	/* Find a free task structure */
++ 	int i = 0;
++ 	Task *ts = NULL;
++@@ -85,8 +86,8 @@
++ 	ts->task_id = i;
++ 	ts->state = TASK_RUNNABLE;
++ 	ts->parent_id = cur_task->task_id;
++-	ts->remind_ticks = 100;
++-
+++	ts->remind_ticks = TIME_QUANT;
+++	unlock();
++ 	return i;
++ }
++ 
++@@ -106,7 +107,7 @@
++ 
++ 	if (pid < 0 )
++ 		return -1;
++-	
+++	lock();
++ 	if ((uint32_t)cur_task != NULL)
++ 	{
++ 		/* Lab4 TODO: Copy parent's tf to new task's tf */
++@@ -120,7 +121,7 @@
++ 		//parent
++ 		cur_task->tf.tf_regs.reg_eax=0;
++ 	}
++-
+++	unlock();
++ 	return 0;
++ 	
++ 	
++Index: nctu_os/kernel/trap.c
++===================================================================
++--- nctu_os/kernel/trap.c	(revision 367)
+++++ nctu_os/kernel/trap.c	(working copy)
++@@ -3,7 +3,7 @@
++ #include <kernel/assert.h>
++ #include <inc/mmu.h>
++ #include <inc/x86.h>
++-
+++#include <inc/lock.h>
++ /* For debugging, so print_trapframe can distinguish between printing
++  * a saved trapframe and printing the current trapframe and print some
++  * additional information in the latter case.
++@@ -142,33 +142,27 @@
++ 		print_trapframe(tf);
++ 		return;
++ 	}
++-
+++	
++ 	last_tf = tf;
+++	//lock();	//(1)
++ 	/* Lab3 TODO: Check the trap number and call the interrupt handler. */
++ 	if (trap_hnd[tf->tf_trapno] != NULL)
++ 	{
++-	
+++		extern Task *cur_task;
+++		
++ 		if ((tf->tf_cs & 3) == 3)
++ 		{
++-			// Trapped from user mode.
++-			extern Task *cur_task;
++-
++-			// Disable interrupt first
++-			// Think: Why we need disable interrupt here?
++-			__asm __volatile("cli");
++-
++-			// Copy trap frame (which is currently on the stack)
++-			// into 'cur_task->tf', so that running the environment
++-			// will restart at the trap point.
+++			lock();
++ 			cur_task->tf = *tf;
++ 			tf = &(cur_task->tf);
++-				
+++			unlock();
++ 		}
++ 		// Do ISR
++ 		trap_hnd[tf->tf_trapno](tf);
++ 		
++-		// Pop the kernel stack 
+++		//lock();	//(2)
++ 		env_pop_tf(tf);
+++		return;
++ 	}
++ 
++ 	// Unexpected trap: The user process or the kernel has a bug.
++Index: nctu_os/kernel/task.h
++===================================================================
++--- nctu_os/kernel/task.h	(revision 367)
+++++ nctu_os/kernel/task.h	(working copy)
++@@ -2,8 +2,8 @@
++ #define TASK_H
++ 
++ #include <inc/trap.h>
++-#define NR_TASKS	10
++-#define TIME_QUANT	100
+++#define NR_TASKS	5
+++#define TIME_QUANT	1
++ 
++ typedef enum
++ {
++Index: nctu_os/kernel/syscall.c
++===================================================================
++--- nctu_os/kernel/syscall.c	(revision 367)
+++++ nctu_os/kernel/syscall.c	(working copy)
++@@ -1,6 +1,7 @@
++ #include <kernel/task.h>
++ #include <kernel/syscall.h>
++ #include <inc/trap.h>
+++#include <inc/lock.h>
++ 
++ void do_puts(char *str, uint32_t len)
++ {
++@@ -42,6 +43,7 @@
++ 
++ 	case SYS_sleep:
++ 		/* Lab4 TODO: set task to sleep state and yield this task. */
+++		lock();
++ 		cur_task->state= TASK_SLEEP;
++ 		cur_task->remind_ticks= a1;
++ 		sched_yield();
++Index: nctu_os/kernel/timer.c
++===================================================================
++--- nctu_os/kernel/timer.c	(revision 367)
+++++ nctu_os/kernel/timer.c	(working copy)
++@@ -4,6 +4,7 @@
++ #include <kernel/task.h>
++ #include <inc/mmu.h>
++ #include <inc/x86.h>
+++#include <inc/lock.h>
++ 
++ #define TIME_HZ 100
++ 
++@@ -27,7 +28,6 @@
++ 	extern Task tasks[];
++ 	
++ 	extern Task *cur_task;
++-	
++ 	if (cur_task != NULL)
++ 	{
++ 		/* Lab4 TODO: Check if tasks need wakeup.  */
++@@ -36,14 +36,19 @@
++ 			if(tasks[i].state == TASK_SLEEP)
++ 			{
++ 				tasks[i].remind_ticks--;
++-				if(!tasks[i].remind_ticks)
+++				if(tasks[i].remind_ticks==0)
++ 					tasks[i].state=TASK_RUNNABLE;
++ 			}
++ 		}
++ 		/* Lab4 TODO: Check cur_task->remind_ticks, if remind_ticks <= 0 then yield the task (call sched_yield() in sched.c)*/
++ 		cur_task->remind_ticks--;
++-		if(!cur_task->remind_ticks)	
++-			sched_yield();
+++		if(cur_task->remind_ticks<=0)
+++		{
+++			if((tf->tf_cs & 3) == 3)
+++				sched_yield();
+++			else
+++				env_pop_tf(tf);
+++		}
++ 	}
++ }
++ 
++@@ -61,7 +66,7 @@
++ 	/* Lab3 TODO: Register trap handler */
++ 	extern void timer_entry();
++ 	
++-	register_handler(IRQ_OFFSET+IRQ_TIMER, timer_handler,timer_entry, 1, 0);
+++	register_handler(IRQ_OFFSET+IRQ_TIMER, timer_handler,timer_entry, 0, 0);
++ 	//SETGATE(idt[IRQ_OFFSET+IRQ_TIMER], 0, GD_KT, timer_entry, 0)
++ 
++ }
++Index: nctu_os/kernel/main.c
++===================================================================
++--- nctu_os/kernel/main.c	(revision 367)
+++++ nctu_os/kernel/main.c	(working copy)
++@@ -9,7 +9,19 @@
++ 
++ extern void init_video(void);
++ extern Task *cur_task;
++-
+++void task2()
+++{
+++	int i,pid;
+++	i=getpid();
+++	while(1)
+++	{
+++		if( (pid=fork()) >0 )
+++		{
+++			cprintf("Im %d, bye!\n",pid);
+++			kill_self();
+++		}		
+++	}
+++}
++ void kernel_main(void)
++ {
++ 	extern void task_job();
++@@ -41,17 +53,18 @@
++ 	"movw %%ax,%%gs" \
++ 	:: "m" (cur_task->tf.tf_esp), "i" (GD_UD | 0x03), "i" (GD_UT | 0x03)
++ 	:"ax");
++-
++ 	/* Below code is running on user mode */
++ 	if (fork())
++ 	{
++ 
++ 		/* Child */
+++		/*
++ 		if (fork()) task_job(); 
++ 		else{
++ 		if (fork()) task_job(); else
++ 		if (fork()) task_job(); else task_job();}
++-		
+++		*/
+++		task2();
++ 	}
++ 	else
++ 	{
++Index: nctu_os/kernel/sched.c
++===================================================================
++--- nctu_os/kernel/sched.c	(revision 367)
+++++ nctu_os/kernel/sched.c	(working copy)
++@@ -1,5 +1,5 @@
++ #include <kernel/task.h>
++-
+++#include <inc/lock.h>
++ static index = 0;
++ void sched_yield(void)
++ {
++@@ -8,7 +8,6 @@
++ 	extern Task *cur_task;
++ 	int i;
++ 	int next_i = 0;
++-
++ 	/* Lab4 TODO: Implement a simple round-robin scheduling there 
++ 	*  Hint: Choose a runnable task from tasks[] and use env_pop_tf() do the context-switch
++ 	*/
++@@ -16,12 +15,13 @@
++ 	{
++ 		index = (index +1) % NR_TASKS;
++ 		if( tasks[index].state == TASK_RUNNABLE )
++-		{
++-			if(cur_task->state!=TASK_SLEEP)
+++		{	
+++			lock();
+++			if(cur_task!=NULL && cur_task->state==TASK_RUNNING)
++ 				cur_task->state = TASK_RUNNABLE;
++ 			cur_task=&tasks[index];
++ 			cur_task->state = TASK_RUNNING;
++-			cur_task->remind_ticks= 100;
+++			cur_task->remind_ticks= TIME_QUANT;
++ 			env_pop_tf(&cur_task->tf);
++ 		}
++ 	}

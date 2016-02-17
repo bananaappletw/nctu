@@ -1,0 +1,101 @@
+K 25
+svn:wc:ra_dav:version-url
+V 51
+/OSDI_SVN/!svn/ver/247/u0116320/lab3/nctu_os/kernel
+END
+kbd.c
+K 25
+svn:wc:ra_dav:version-url
+V 57
+/OSDI_SVN/!svn/ver/206/u0116320/lab3/nctu_os/kernel/kbd.c
+END
+task.c
+K 25
+svn:wc:ra_dav:version-url
+V 58
+/OSDI_SVN/!svn/ver/206/u0116320/lab3/nctu_os/kernel/task.c
+END
+printf.c
+K 25
+svn:wc:ra_dav:version-url
+V 60
+/OSDI_SVN/!svn/ver/206/u0116320/lab3/nctu_os/kernel/printf.c
+END
+trap.c
+K 25
+svn:wc:ra_dav:version-url
+V 58
+/OSDI_SVN/!svn/ver/247/u0116320/lab3/nctu_os/kernel/trap.c
+END
+trap_entry.S
+K 25
+svn:wc:ra_dav:version-url
+V 64
+/OSDI_SVN/!svn/ver/247/u0116320/lab3/nctu_os/kernel/trap_entry.S
+END
+shell.c
+K 25
+svn:wc:ra_dav:version-url
+V 59
+/OSDI_SVN/!svn/ver/247/u0116320/lab3/nctu_os/kernel/shell.c
+END
+trap.h
+K 25
+svn:wc:ra_dav:version-url
+V 58
+/OSDI_SVN/!svn/ver/206/u0116320/lab3/nctu_os/kernel/trap.h
+END
+kern.ld
+K 25
+svn:wc:ra_dav:version-url
+V 59
+/OSDI_SVN/!svn/ver/247/u0116320/lab3/nctu_os/kernel/kern.ld
+END
+screen.c
+K 25
+svn:wc:ra_dav:version-url
+V 60
+/OSDI_SVN/!svn/ver/206/u0116320/lab3/nctu_os/kernel/screen.c
+END
+timer.c
+K 25
+svn:wc:ra_dav:version-url
+V 59
+/OSDI_SVN/!svn/ver/206/u0116320/lab3/nctu_os/kernel/timer.c
+END
+entry.S
+K 25
+svn:wc:ra_dav:version-url
+V 59
+/OSDI_SVN/!svn/ver/206/u0116320/lab3/nctu_os/kernel/entry.S
+END
+main.c
+K 25
+svn:wc:ra_dav:version-url
+V 58
+/OSDI_SVN/!svn/ver/206/u0116320/lab3/nctu_os/kernel/main.c
+END
+picirq.c
+K 25
+svn:wc:ra_dav:version-url
+V 60
+/OSDI_SVN/!svn/ver/206/u0116320/lab3/nctu_os/kernel/picirq.c
+END
+COPYRIGHT
+K 25
+svn:wc:ra_dav:version-url
+V 61
+/OSDI_SVN/!svn/ver/206/u0116320/lab3/nctu_os/kernel/COPYRIGHT
+END
+picirq.h
+K 25
+svn:wc:ra_dav:version-url
+V 60
+/OSDI_SVN/!svn/ver/206/u0116320/lab3/nctu_os/kernel/picirq.h
+END
+Makefile
+K 25
+svn:wc:ra_dav:version-url
+V 60
+/OSDI_SVN/!svn/ver/206/u0116320/lab3/nctu_os/kernel/Makefile
+END

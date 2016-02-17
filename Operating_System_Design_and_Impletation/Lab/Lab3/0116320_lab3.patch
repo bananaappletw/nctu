@@ -1,0 +1,160 @@
+Index: nctu_os/kernel/trap.c
+===================================================================
+--- nctu_os/kernel/trap.c	(revision 212)
++++ nctu_os/kernel/trap.c	(working copy)
+@@ -108,9 +108,21 @@
+ 	}
+ 
+ 	/* Lab3: Check the trap number and call the interrupt handler. */
++	if (tf->tf_trapno == IRQ_OFFSET + IRQ_KBD) {
++		//cprintf("KBD interrupt on irq 7\n");
++		kbd_intr();
++		//print_trapframe(tf);
++		return;
++	}
++	if (tf->tf_trapno == IRQ_OFFSET + IRQ_TIMER) {
++		//cprintf("TIMER interrupt on irq 7\n");
++		timer_handler();
++		//print_trapframe(tf);
++		return;
++	}
+ 
+ 	// Unexpected trap: The user process or the kernel has a bug.
+-	print_trapframe(tf);
++	//print_trapframe(tf);
+ }
+ 
+ void default_trap_handler(struct Trapframe *tf)
+@@ -127,15 +139,19 @@
+ 	int i;
+ 	/* Initial interrupt descrip table for all traps */
+ 	extern void Default_ISR();
++	extern void kbd_entry();
++	extern void timer_entry();
+ 	for (i = 0; i < 256; i++)
+ 	{
+ 		SETGATE(idt[i], 1, GD_KT, Default_ISR, 0);
+ 	}
+ 
+ 	/* Lab3: Keyboard interrupt setup */
++	SETGATE(idt[IRQ_OFFSET+IRQ_KBD], 1, GD_KT, kbd_entry, 0)
+ 
+ 
+ 	/* Lab3: Timer Trap setup*/
++	SETGATE(idt[IRQ_OFFSET+IRQ_TIMER], 0, GD_KT, timer_entry, 0)
+ 
+ 
+ 	lidt(&idt_pd);
+Index: nctu_os/kernel/shell.c
+===================================================================
+--- nctu_os/kernel/shell.c	(revision 212)
++++ nctu_os/kernel/shell.c	(working copy)
+@@ -13,7 +13,8 @@
+ static struct Command commands[] = {
+ 	{ "help", "Display this list of commands", mon_help },
+ 	{ "kerninfo", "Display information about the kernel", mon_kerninfo },
+-	{ "print_tick", "Display system tick", print_tick }
++	{ "print_tick", "Display system tick", print_tick },
++	{ "chgcolor", "Change the text color", chgcolor }
+ };
+ #define NCOMMANDS (sizeof(commands)/sizeof(commands[0]))
+ 
+@@ -30,13 +31,41 @@
+ int mon_kerninfo(int argc, char **argv)
+ {
+ 	/* Lab3: print the kernel code and data section size */
++	extern int kernel_load_addr;
++	extern int etext;
++	extern int kernel_data_load_addr;
++	extern int end;
++
++	cprintf("Kernel code base start=0x%x size=%d\n",
++	&kernel_load_addr,
++	(int)&etext-(int)&kernel_load_addr);
++
++	cprintf("Kernel data base start=0x%x size=%d\n",
++	&kernel_data_load_addr,
++	(int)&end-(int)&kernel_data_load_addr);
++
++	cprintf("Kernel executable memory footprint: %dKB\n",
++	((int)&end-(int)&kernel_load_addr)/1000);
+ 	return 0;
+ }
+ int print_tick(int argc, char **argv)
+ {
+ 	cprintf("Now tick = %d\n", get_tick());
+ }
+-
++int chgcolor(int argc, char **argv)
++{
++	if(argc==1)
++	{
++		cprintf("No input text color!\n");
++	}
++	else if(argc==2)
++	{
++		//cprintf("%s\n",argv[1]);
++		settextcolor(*argv[1],0);
++		cprintf("Change text color %d!\n",*argv[1]-'0');
++	}
++	return 0;
++}
+ #define WHITESPACE "\t\r\n "
+ #define MAXARGS 16
+ 
+Index: nctu_os/kernel/trap_entry.S
+===================================================================
+--- nctu_os/kernel/trap_entry.S	(revision 212)
++++ nctu_os/kernel/trap_entry.S	(working copy)
+@@ -19,6 +19,8 @@
+ 
+ /* ISRs */
+ TRAPHANDLER_NOEC(Default_ISR, T_DEFAULT)
++TRAPHANDLER_NOEC(kbd_entry, IRQ_OFFSET+IRQ_KBD)
++TRAPHANDLER_NOEC(timer_entry, IRQ_OFFSET+IRQ_TIMER)
+ /* Hint: Use TRAPHANDLER_NOEC macro define other isr enrty */
+ 
+ .globl default_trap_handler;
+@@ -27,7 +29,19 @@
+ 	 * You can reference the http://www.osdever.net/bkerndev/Docs/isrs.htm
+ 	 * After stack parpared, just "call default_trap_handler".
+ 	 */
++	push %ds
++	push %es
++	pushal
++	mov %esp, %eax
++	push %eax
++	
++	call default_trap_handler
++	pop %eax
++	popal
++	pop %es
++	pop %ds
+ 
++
+ 	add $8, %esp # Cleans up the pushed error code and pushed ISR number
+ 	iret # pops 5 things at once: CS, EIP, EFLAGS, SS, and ESP!
+ 
+Index: nctu_os/kernel/kern.ld
+===================================================================
+--- nctu_os/kernel/kern.ld	(revision 212)
++++ nctu_os/kernel/kern.ld	(working copy)
+@@ -42,6 +42,7 @@
+ 	. = ALIGN(0x1000);
+ 
+ 	/* The data segment */
++	PROVIDE(kernel_data_load_addr = .);
+ 	.data : {
+ 		*(.data)
+ 	}
+Index: nctu_os/inc/shell.h
+===================================================================
+--- nctu_os/inc/shell.h	(revision 212)
++++ nctu_os/inc/shell.h	(working copy)
+@@ -5,5 +5,6 @@
+ int mon_help(int argc, char **argv);
+ int mon_kerninfo(int argc, char **argv);
+ int print_tick(int argc, char **argv);
++int chgcolor(int argc, char **argv);
+ 
+ #endif

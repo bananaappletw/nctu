@@ -1,0 +1,29 @@
+K 25
+svn:wc:ra_dav:version-url
+V 52
+/OSDI_SVN/!svn/ver/125/u0116320/lab1/linux-0.11/boot
+END
+setup.s
+K 25
+svn:wc:ra_dav:version-url
+V 58
+/OSDI_SVN/!svn/ver/4/u0116320/lab1/linux-0.11/boot/setup.s
+END
+head.s
+K 25
+svn:wc:ra_dav:version-url
+V 57
+/OSDI_SVN/!svn/ver/4/u0116320/lab1/linux-0.11/boot/head.s
+END
+bootsect.s
+K 25
+svn:wc:ra_dav:version-url
+V 63
+/OSDI_SVN/!svn/ver/125/u0116320/lab1/linux-0.11/boot/bootsect.s
+END
+Makefile
+K 25
+svn:wc:ra_dav:version-url
+V 61
+/OSDI_SVN/!svn/ver/125/u0116320/lab1/linux-0.11/boot/Makefile
+END

@@ -1,0 +1,29 @@
+K 25
+svn:wc:ra_dav:version-url
+V 49
+/OSDI_SVN/!svn/ver/218/u0116320/lab4/nctu_os/boot
+END
+boot.S
+K 25
+svn:wc:ra_dav:version-url
+V 56
+/OSDI_SVN/!svn/ver/218/u0116320/lab4/nctu_os/boot/boot.S
+END
+main.c
+K 25
+svn:wc:ra_dav:version-url
+V 56
+/OSDI_SVN/!svn/ver/218/u0116320/lab4/nctu_os/boot/main.c
+END
+sign.pl
+K 25
+svn:wc:ra_dav:version-url
+V 57
+/OSDI_SVN/!svn/ver/218/u0116320/lab4/nctu_os/boot/sign.pl
+END
+Makefile
+K 25
+svn:wc:ra_dav:version-url
+V 58
+/OSDI_SVN/!svn/ver/218/u0116320/lab4/nctu_os/boot/Makefile
+END

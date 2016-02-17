@@ -1,0 +1,35 @@
+K 25
+svn:wc:ra_dav:version-url
+V 48
+/OSDI_SVN/!svn/ver/218/u0116320/lab4/nctu_os/lib
+END
+console.c
+K 25
+svn:wc:ra_dav:version-url
+V 58
+/OSDI_SVN/!svn/ver/218/u0116320/lab4/nctu_os/lib/console.c
+END
+printf.c
+K 25
+svn:wc:ra_dav:version-url
+V 57
+/OSDI_SVN/!svn/ver/218/u0116320/lab4/nctu_os/lib/printf.c
+END
+printfmt.c
+K 25
+svn:wc:ra_dav:version-url
+V 59
+/OSDI_SVN/!svn/ver/218/u0116320/lab4/nctu_os/lib/printfmt.c
+END
+readline.c
+K 25
+svn:wc:ra_dav:version-url
+V 59
+/OSDI_SVN/!svn/ver/218/u0116320/lab4/nctu_os/lib/readline.c
+END
+string.c
+K 25
+svn:wc:ra_dav:version-url
+V 57
+/OSDI_SVN/!svn/ver/218/u0116320/lab4/nctu_os/lib/string.c
+END
