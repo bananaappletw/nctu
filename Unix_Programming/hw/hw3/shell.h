@@ -64,6 +64,7 @@ int split_line(string line,vector<JOB>& jobs,bool& background);
 int check_background(string line,string & strip_line,bool& background);
 int redirect_io(string,CMD& cmd,string &);
 int split_argv(string input,CMD& cmd);
+bool is_glob(string token);
 void launch_job(JOB& job);
 void put_job_foreground(JOB job);
 void put_job_background(JOB job);

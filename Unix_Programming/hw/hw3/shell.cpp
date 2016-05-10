@@ -12,6 +12,7 @@
 #include<sys/types.h>
 #include<sys/stat.h>
 #include "shell.h"
+#include<glob.h>
 using namespace std;
 
 void print_prompt()
@@ -39,6 +40,8 @@ string strip_spaces(string input)
 }
 void print_help()
 {
+    cout<<WHITE<<"help"<<NONE<<endl;
+    cout<<"print help messages"<<endl;
     cout<<WHITE<<"jobs"<<NONE<<endl;
     cout<<"print all jobs status"<<endl;
     cout<<WHITE<<"fg"<<NONE<<endl;
@@ -243,6 +246,7 @@ int split_line(string line,vector<JOB>& jobs,bool& background)
             return 1;
         }
 
+
         if(split_argv(strip_cmd,temp_cmd)==SYNTAX_ERROR)
         {
             return 1;
@@ -329,7 +333,18 @@ int split_argv(string input,CMD& cmd)
 
     //input.split(' ')
     while(getline(ss,temp,' '))
-        tokens.push(temp);
+    {
+        if(!is_glob(temp))
+            tokens.push(temp);
+        else
+        {
+            glob_t globbuf;
+            glob(temp.c_str(), GLOB_TILDE , NULL, &globbuf);
+            for(unsigned int i = 0 ; i < globbuf.gl_pathc ; i++)
+                tokens.push(string(globbuf.gl_pathv[i]));
+            globfree(&globbuf);
+        }
+    }
     int index = 0;
     char** argv = (char **)malloc((tokens.size()+1)*sizeof(char*));
 
@@ -343,6 +358,12 @@ int split_argv(string input,CMD& cmd)
     argv[index] = NULL;
     cmd.argv = argv;
     return 0;
+}
+bool is_glob(string token)
+{
+    if(token.find_first_of("*.~?/")!=string::npos)
+        return true;
+    return false;
 }
 
 void launch_job(JOB& job)
