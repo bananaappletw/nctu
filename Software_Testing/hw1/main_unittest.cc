@@ -26,3 +26,12 @@ TEST(triangle_type, EquivalenceClass){
   EXPECT_STREQ("Invalid", triangle_type(5 , 201, 5));
   EXPECT_STREQ("Invalid", triangle_type(5 , 5, 201));
 }
+
+TEST(triangle_type, Edge){
+  EXPECT_STREQ("Invalid", triangle_type(0, 5, 5));
+  EXPECT_STREQ("Isosceles", triangle_type(1 , 5, 5));
+  EXPECT_STREQ("Isosceles", triangle_type(2 , 5, 5));
+  EXPECT_STREQ("Not a Triangle", triangle_type(199 , 5, 5));
+  EXPECT_STREQ("Not a Triangle", triangle_type(200 , 5, 5));
+  EXPECT_STREQ("Invalid", triangle_type(201, 5, 5));
+}
