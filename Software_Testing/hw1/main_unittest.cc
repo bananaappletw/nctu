@@ -35,3 +35,15 @@ TEST(triangle_type, Edge){
   EXPECT_STREQ("Not a Triangle", triangle_type(200 , 5, 5));
   EXPECT_STREQ("Invalid", triangle_type(201, 5, 5));
 }
+
+TEST(triangle_type, DecisionTable){
+  EXPECT_STREQ("Not a Triangle", triangle_type(4, 1, 2));
+  EXPECT_STREQ("Not a Triangle", triangle_type(1, 4, 2));
+  EXPECT_STREQ("Not a Triangle", triangle_type(1, 2, 4));
+  EXPECT_STREQ("Equilateral", triangle_type(5, 5, 5));
+  EXPECT_STREQ("Isosceles", triangle_type(2 , 2, 3));
+  EXPECT_STREQ("Isosceles", triangle_type(2 , 3, 2));
+  EXPECT_STREQ("Isosceles", triangle_type(3 , 2, 2));
+  EXPECT_STREQ("Isosceles", triangle_type(2 , 3, 2));
+  EXPECT_STREQ("Scalene", triangle_type(3 , 4, 5));
+}
