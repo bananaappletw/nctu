@@ -27,9 +27,9 @@ const char* triangle_type(int a, int b, int c)
 
     if( a == b && b == c )
         return "Equilateral";
-    if( a == b && a != c && b != c )
+    if( a == b && a != c )
         return "Isosceles";
-    else if( b == c && b != a && c != a )
+    else if( b == c && b != a )
         return "Isosceles";
     else
         return "Scalene";
