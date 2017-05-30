@@ -4,3 +4,6 @@
 [submodule "Software_Testing/hw2/googletest"]
 	path = Software_Testing/hw2/googletest
 	url = https://github.com/google/googletest
+[submodule "Software_Testing/hw4/googletest"]
+	path = Software_Testing/hw4/googletest
+	url = https://github.com/google/googletest
