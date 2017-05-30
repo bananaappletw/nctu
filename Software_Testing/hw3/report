@@ -1,0 +1,17 @@
+Name                                          Stmts   Miss  Cover
+-----------------------------------------------------------------
+users/__init__.py                                 0      0   100%
+users/admin.py                                   64     18    72%
+users/apps.py                                     4      4     0%
+users/forms.py                                   81     20    75%
+users/migrations/0001_initial.py                  9      0   100%
+users/migrations/0002_submitlog_gist_id.py        5      0   100%
+users/migrations/0003_auto_20170115_2111.py       5      0   100%
+users/migrations/0004_auto_20170115_2112.py       5      0   100%
+users/migrations/__init__.py                      0      0   100%
+users/models.py                                 110     17    85%
+users/tests.py                                  208      0   100%
+users/urls.py                                     5      0   100%
+users/views.py                                  192     70    64%
+-----------------------------------------------------------------
+TOTAL                                           688    129    81%
